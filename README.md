@@ -1,4 +1,4 @@
-## hellos - is a light fetch writtne in C
+## hellos - is a light fetch written in C
 
 ## installing
 ```bash
