@@ -1,4 +1,4 @@
-## hellos - is a light fetch written in C
+# hellos - A lightweight system information fetch written in C.
 
 ## installing
 ```bash
