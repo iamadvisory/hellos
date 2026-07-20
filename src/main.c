@@ -60,7 +60,52 @@ void get_kernel(char *kernel_v, size_t size) {
     }
 }
 
-//next: packages
+void get_packages(char *packages, size_t size) {
+    char line[256];
+    if (access("/usr/bin/pacman", X_OK) == 0) {
+        FILE *fp = popen("pacman -Qq | wc -l", "r");
+        if (fp != NULL) {
+            fgets(line, sizeof(line), fp);
+            line[strcspn(line, "\n")] = '\0';
+            pclose(fp);
+            snprintf(packages, size, "%s (pacman)", line);
+        }
+    } else if (access("/usr/bin/dpkg-query", X_OK) == 0) {
+        FILE *fp = popen("dpkg-query -f '${binary:Package}\n' -W | wc -l", "r");
+        if (fp != NULL) {
+            fgets(line, sizeof(line), fp);
+            line[strcspn(line, "\n")] = '\0';
+            pclose(fp);
+            snprintf(packages, size, "%s (dpkg)", line);
+        }
+    } else if (access("/usr/bin/rpm", X_OK) == 0) {
+        FILE *fp = popen("rpm -qa | wc -l", "r");
+        if (fp != NULL) {
+            fgets(line, sizeof(line), fp);
+            line[strcspn(line, "\n")] = '\0';
+            pclose(fp);
+            snprintf(packages, size, "%s (rpm)", line);
+        }
+    } else if (access("/sbin/apk", X_OK) == 0) {
+        FILE *fp = popen("apk info | wc -l", "r");
+        if (fp != NULL) {
+            fgets(line, sizeof(line), fp);
+            line[strcspn(line, "\n")] = '\0';
+            pclose(fp);
+            snprintf(packages, size, "%s (apk)", line);
+        }
+    } else if (access("/usr/bin/qlist", X_OK) == 0) {
+        FILE *fp = popen("qlist -I | wc -l", "r");
+        if (fp != NULL) {
+            fgets(line, sizeof(line), fp);
+            line[strcspn(line, "\n")] = '\0';
+            pclose(fp);
+            snprintf(packages, size, "%s (portage)", line);
+        }
+    } else {
+        snprintf(packages, size, "Unknown");
+    }
+}
 
 void get_uptime(char *uptime, size_t size) {
     struct sysinfo info;
@@ -157,6 +202,10 @@ int main() {
     char kernel[256];
     get_kernel(kernel, sizeof(kernel));
     printf("\033[1;36mKernel:\033[0m %s\n", kernel);
+
+    char packages[128];
+    get_packages(packages, sizeof(packages));
+    printf("\033[1;36mPackages:\033[0m %s\n", packages);
 
     char uptime[128];
     get_uptime(uptime, sizeof(uptime));
