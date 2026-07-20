@@ -143,7 +143,7 @@ void get_cpu(char *cpu, size_t size) {
 }
 
 //next is get_gpu()
-
+//next is get_ram()
 int main() {
 #ifdef __linux__
     print_header();
