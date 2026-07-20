@@ -11,3 +11,5 @@ sudo make install
 ```bash
 hellos
 ```
+
+![hellos previwe](screens/image.png)
