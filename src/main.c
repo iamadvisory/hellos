@@ -182,7 +182,7 @@ int main() {
 
     // char ram[128];
     // get_ram(gpu, sizeof(ram));
-    // printf("\033[1;36mRAM:\033[0m %s\n", RAM);
+    // printf("\033[1;36mRAM:\033[0m %s\n", ram);
 
 #else
     printf("This program has only Linux support.\n");
