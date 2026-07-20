@@ -11,11 +11,11 @@ void print_header() {
     char hostname[HOST_NAME_MAX + 1];
     char *username = getenv("USER");
 
-    if (username == NULL) {
+    if(username == NULL) {
         username = "user";
     }
 
-    if (gethostname(hostname, sizeof(hostname)) == 0) {
+    if(gethostname(hostname, sizeof(hostname)) == 0) {
         hostname[HOST_NAME_MAX] = '\0';
         printf("\033[1;32m%s\033[0m@\033[1;36m%s\033[0m\n", username, hostname);
         size_t len = strlen(username) + 1 + strlen(hostname);
@@ -28,7 +28,7 @@ void print_header() {
 
 void get_linux_distro(char *distro, size_t size) {
     FILE *fp = fopen("/etc/os-release", "r");
-    if (fp == NULL) {
+    if(fp == NULL) {
         snprintf(distro, size, "Unknown");
         return;
     }
@@ -37,12 +37,12 @@ void get_linux_distro(char *distro, size_t size) {
 
     char line[256];
 
-    while (fgets(line, sizeof(line), fp)) {
-        if (strncmp(line, "NAME=", 5) == 0) {
+    while(fgets(line, sizeof(line), fp)) {
+        if(strncmp(line, "NAME=", 5) == 0) {
             char *start = line + 5;
-            if (*start == '"') start++;
+            if(*start == '"') start++;
             char *end = strpbrk(start, "\"\n");
-            if (end) *end = '\0';
+            if(end) *end = '\0';
             snprintf(distro, size, "%s", start);
             break;
         }
@@ -53,7 +53,7 @@ void get_linux_distro(char *distro, size_t size) {
 void get_kernel(char *kernel_v, size_t size) {
     struct utsname buffer;
 
-    if (uname(&buffer) == 0) {
+    if(uname(&buffer) == 0) {
         snprintf(kernel_v, size, "%s %s", buffer.sysname, buffer.release);
     } else {
         snprintf(kernel_v, size, "Unknown");
@@ -62,15 +62,15 @@ void get_kernel(char *kernel_v, size_t size) {
 
 void get_packages(char *packages, size_t size) {
     char line[256];
-    if (access("/usr/bin/pacman", X_OK) == 0) {
+    if(access("/usr/bin/pacman", X_OK) == 0) {
         FILE *fp = popen("pacman -Qq | wc -l", "r");
-        if (fp != NULL) {
+        if(fp != NULL) {
             fgets(line, sizeof(line), fp);
             line[strcspn(line, "\n")] = '\0';
             pclose(fp);
             snprintf(packages, size, "%s (pacman)", line);
         }
-    } else if (access("/usr/bin/dpkg-query", X_OK) == 0) {
+    } else if(access("/usr/bin/dpkg-query", X_OK) == 0) {
         FILE *fp = popen("dpkg-query -f '${binary:Package}\n' -W | wc -l", "r");
         if (fp != NULL) {
             fgets(line, sizeof(line), fp);
@@ -78,15 +78,15 @@ void get_packages(char *packages, size_t size) {
             pclose(fp);
             snprintf(packages, size, "%s (dpkg)", line);
         }
-    } else if (access("/usr/bin/rpm", X_OK) == 0) {
+    } else if(access("/usr/bin/rpm", X_OK) == 0) {
         FILE *fp = popen("rpm -qa | wc -l", "r");
-        if (fp != NULL) {
+        if(fp != NULL) {
             fgets(line, sizeof(line), fp);
             line[strcspn(line, "\n")] = '\0';
             pclose(fp);
             snprintf(packages, size, "%s (rpm)", line);
         }
-    } else if (access("/sbin/apk", X_OK) == 0) {
+    } else if(access("/sbin/apk", X_OK) == 0) {
         FILE *fp = popen("apk info | wc -l", "r");
         if (fp != NULL) {
             fgets(line, sizeof(line), fp);
@@ -94,7 +94,7 @@ void get_packages(char *packages, size_t size) {
             pclose(fp);
             snprintf(packages, size, "%s (apk)", line);
         }
-    } else if (access("/usr/bin/qlist", X_OK) == 0) {
+    } else if(access("/usr/bin/qlist", X_OK) == 0) {
         FILE *fp = popen("qlist -I | wc -l", "r");
         if (fp != NULL) {
             fgets(line, sizeof(line), fp);
@@ -164,7 +164,7 @@ void get_de_wm(char *dewm, size_t size) {
 
 void get_cpu(char *cpu, size_t size) {
     FILE *fp = fopen("/proc/cpuinfo", "r");
-    if (fp == NULL) {
+    if(fp == NULL) {
         snprintf(cpu, size, "Unknown");
         return;
     }
@@ -173,8 +173,8 @@ void get_cpu(char *cpu, size_t size) {
 
     char line[256];
 
-    while (fgets(line, sizeof(line), fp)) {
-        if (strncmp(line, "model name", 10) == 0) {
+    while(fgets(line, sizeof(line), fp)) {
+        if(strncmp(line, "model name", 10) == 0) {
             char *colon = strchr(line, ':');
             if (colon) {
                 char *start = colon + 1;
@@ -190,7 +190,29 @@ void get_cpu(char *cpu, size_t size) {
 }
 
 //next is get_gpu()
-//next is get_ram()
+
+void get_ram(char *ram, size_t size) {
+    struct sysinfo info;
+
+    if (sysinfo(&info) == 0) {
+        unsigned long long unit = info.mem_unit;
+
+        unsigned long long total_bytes = (unsigned long long)info.totalram * unit;
+        unsigned long long free_bytes  = (unsigned long long)info.freeram * unit;
+        unsigned long long buff_bytes  = (unsigned long long)info.bufferram * unit;
+
+        unsigned long total_mib = total_bytes / (1024 * 1024);
+        unsigned long free_mib  = free_bytes / (1024 * 1024);
+        unsigned long buff_mib  = buff_bytes / (1024 * 1024);
+
+        unsigned long used_mib = total_mib - free_mib - buff_mib;
+
+        snprintf(ram, size, "%luMiB / %luMiB", used_mib, total_mib);
+    } else {
+        snprintf(ram, size, "Unknown");
+    }
+}
+
 int main() {
 #ifdef __linux__
     print_header();
@@ -231,9 +253,9 @@ int main() {
     // get_gpu(gpu, sizeof(gpu));
     // printf("\033[1;36mGPU:\033[0m %s\n", gpu);
 
-    // char ram[128];
-    // get_ram(gpu, sizeof(ram));
-    // printf("\033[1;36mRAM:\033[0m %s\n", ram);
+    char ram[128];
+    get_ram(ram, sizeof(ram));
+    printf("\033[1;36mRAM:\033[0m %s\n", ram);
 
 #else
     printf("This program has only Linux support.\n");
