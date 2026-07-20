@@ -142,6 +142,8 @@ void get_cpu(char *cpu, size_t size) {
     fclose(fp);
 }
 
+//next is get_gpu()
+
 int main() {
 #ifdef __linux__
     print_header();
@@ -173,6 +175,14 @@ int main() {
     char cpu[128];
     get_cpu(cpu, sizeof(cpu));
     printf("\033[1;36mCPU:\033[0m %s\n", cpu);
+
+    // char gpu[128];
+    // get_gpu(gpu, sizeof(gpu));
+    // printf("\033[1;36mGPU:\033[0m %s\n", gpu);
+
+    // char ram[128];
+    // get_ram(gpu, sizeof(ram));
+    // printf("\033[1;36mRAM:\033[0m %s\n", RAM);
 
 #else
     printf("This program has only Linux support.\n");
