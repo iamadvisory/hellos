@@ -60,6 +60,8 @@ void get_kernel(char *kernel_v, size_t size) {
     }
 }
 
+//next: packages
+
 void get_uptime(char *uptime, size_t size) {
     struct sysinfo info;
 
