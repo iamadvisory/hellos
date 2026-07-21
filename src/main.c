@@ -189,7 +189,7 @@ void get_cpu(char *cpu, size_t size) {
     fclose(fp);
 }
 
-//next is get_gpu()
+//next: get_gpu(char *gpu, size_t size)
 
 void get_ram(char *ram, size_t size) {
     FILE *fp = fopen("/proc/meminfo", "r");
@@ -220,6 +220,12 @@ void get_ram(char *ram, size_t size) {
         snprintf(ram, size, "Unknown");
     }
 }
+
+//next: void get_disk(char *disk, size_t size)
+
+//next: void get_swap(char *swap, size_t size)
+
+//next: void get_ip(char *ipm size_t size)
 
 int main() {
 #ifdef __linux__
