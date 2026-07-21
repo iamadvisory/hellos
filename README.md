@@ -12,4 +12,4 @@ sudo make install
 hellos
 ```
 
-![hellos previwe](screens/image_v0.2.png)
+![hellos previwe](screens/image_v0.3.png)
