@@ -192,20 +192,28 @@ void get_cpu(char *cpu, size_t size) {
 //next is get_gpu()
 
 void get_ram(char *ram, size_t size) {
-    struct sysinfo info;
+    FILE *fp = fopen("/proc/meminfo", "r");
+    if(fp == NULL) {
+        snprintf(ram, size, "Unknown");
+        return;
+    }
 
-    if (sysinfo(&info) == 0) {
-        unsigned long long unit = info.mem_unit;
+    snprintf(ram, size, "Unknown");
 
-        unsigned long long total_bytes = (unsigned long long)info.totalram * unit;
-        unsigned long long free_bytes  = (unsigned long long)info.freeram * unit;
-        unsigned long long buff_bytes  = (unsigned long long)info.bufferram * unit;
+    unsigned long total = 0;
+    unsigned long available = 0;
+    char line[256];
 
-        unsigned long total_mib = total_bytes / (1024 * 1024);
-        unsigned long free_mib  = free_bytes / (1024 * 1024);
-        unsigned long buff_mib  = buff_bytes / (1024 * 1024);
+    while(fgets(line, sizeof(line), fp) != NULL) {
+        if(sscanf(line, "MemTotal: %lu", &total) == 1) {}
+        if(sscanf(line, "MemAvailable: %lu", &available) == 1) {}
+        if (total > 0 && available > 0) break;
+    }
+    fclose(fp);
 
-        unsigned long used_mib = total_mib - free_mib - buff_mib;
+    if (total > 0 && available > 0) {
+        unsigned long used_mib = (total - available) / 1024;
+        unsigned long total_mib = total / 1024;
 
         snprintf(ram, size, "%luMiB / %luMiB", used_mib, total_mib);
     } else {
