@@ -271,6 +271,18 @@ int main() {
     get_ram(ram, sizeof(ram));
     printf("\033[1;36mRAM:\033[0m %s\n", ram);
 
+    // char disk[128];
+    // get_disk(disk, sizeof(disk));
+    // printf("\033[1;36mDisk (/):\033[0m %s\n", disk);
+
+    // char swap[128];
+    // get_swap(swap, sizeof(swap));
+    // printf("\033[1;36mSwap:\033[0m %s\n", swap);
+
+    // char ip[128];
+    // get_ip(ip, sizeof(ip));
+    // printf("\033[1;36mIP:\033[0m %s\n", ip);
+
 #else
     printf("This program has only Linux support.\n");
 #endif
