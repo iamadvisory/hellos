@@ -177,7 +177,7 @@ void get_cpu(char *cpu, size_t size) {
     while(fgets(line, sizeof(line), fp)) {
         if(strncmp(line, "model name", 10) == 0) {
             char *colon = strchr(line, ':');
-            if (colon) {
+            if(colon) {
                 char *start = colon + 1;
                 while (*start == ' ' || *start == '\t') start++;
                 char *end = strchr(start, '\n');
@@ -190,7 +190,29 @@ void get_cpu(char *cpu, size_t size) {
     fclose(fp);
 }
 
-//next: void get_gpu(char *gpu, size_t size)
+void get_gpu(char *gpu, size_t size) {
+    char line[256];
+    FILE *fp = popen("lspci | grep -E 'VGA|3D|Display'", "r");
+
+    snprintf(gpu, size, "Unknown");
+
+    if(fp != NULL && fgets(line, sizeof(line), fp) != NULL) {
+        char *first_colon = strchr(line, ':');
+        if(first_colon) {
+            char *second_colon = strchr(first_colon + 1, ':');
+            if(second_colon) {
+                char *start = second_colon + 1;
+                while (*start == ' ' || *start == '\t') start++;
+                char *end = strchr(start, '\n');
+                if (end) *end = '\0';
+                snprintf(gpu, size, "%s", start);
+            }
+        }
+    }
+    if(fp != NULL) {
+        pclose(fp);
+    }
+}
 
 void get_ram(char *ram, size_t size) {
     FILE *fp = fopen("/proc/meminfo", "r");
@@ -272,9 +294,9 @@ int main() {
     get_cpu(cpu, sizeof(cpu));
     printf("\033[1;36mCPU:\033[0m %s\n", cpu);
 
-    // char gpu[128];
-    // get_gpu(gpu, sizeof(gpu));
-    // printf("\033[1;36mGPU:\033[0m %s\n", gpu);
+    char gpu[128];
+    get_gpu(gpu, sizeof(gpu));
+    printf("\033[1;36mGPU:\033[0m %s\n", gpu);
 
     char ram[128];
     get_ram(ram, sizeof(ram));
