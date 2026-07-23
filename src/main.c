@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <sys/utsname.h>
 #include <sys/sysinfo.h>
+#include <sys/statvfs.h>
 
 void print_header() {
     char hostname[HOST_NAME_MAX + 1];
@@ -221,7 +222,15 @@ void get_ram(char *ram, size_t size) {
     }
 }
 
-//next: void get_disk(char *disk, size_t size)
+void get_disk(char *disk, size_t size) {
+    struct statvfs buf;
+
+    if(statvfs("/", &buf) == 0) {
+        snprintf(disk, size, "%luGiB / %luGiB", ((buf.f_blocks - buf.f_bavail) * buf.f_frsize / (1024 * 1024 * 1024)), ((buf.f_blocks * buf.f_frsize) / (1024 * 1024 * 1024)));
+    } else {
+        snprintf(disk, size, "Unknown");
+    }
+}
 
 //next: void get_swap(char *swap, size_t size)
 
@@ -271,9 +280,9 @@ int main() {
     get_ram(ram, sizeof(ram));
     printf("\033[1;36mRAM:\033[0m %s\n", ram);
 
-    // char disk[128];
-    // get_disk(disk, sizeof(disk));
-    // printf("\033[1;36mDisk (/):\033[0m %s\n", disk);
+    char disk[128];
+    get_disk(disk, sizeof(disk));
+    printf("\033[1;36mDisk (/):\033[0m %s\n", disk);
 
     // char swap[128];
     // get_swap(swap, sizeof(swap));
