@@ -1,4 +1,4 @@
-# hellos - A lightweight system information fetch written in C.
+# hellos v0.6 - A lightweight system information fetch written in C.
 
 ## Installation
 ```bash
@@ -12,4 +12,6 @@ sudo make install
 hellos
 ```
 
-![hellos previwe](screens/image_v0.5.png)
+![hellos previwe](screens/image_v0.6.png)
+
+## NOT AI PROJECT
