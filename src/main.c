@@ -46,13 +46,18 @@ int main(void) {
     getGpu(buffer, sizeof(buffer));
     printInfo("GPU", "%s", buffer);
 
+    getMotherboard(buffer, sizeof(buffer));
+    printInfo("Motherboard", "%s", buffer);
+
     getRam(buffer, sizeof(buffer));
     printInfo("RAM", "%s", buffer);
 
     getDisk(buffer, sizeof(buffer));
     printInfo("Disk (/)", "%s", buffer);
 
-    // next: getSwap()
+    getSwap(buffer, sizeof(buffer));
+    printInfo("Swap", "%s", buffer);
+
     // next: getIp()
 
 #else

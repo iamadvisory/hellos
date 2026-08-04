@@ -163,6 +163,21 @@ void getDe_wm(char *buffer, size_t size) {
     }
 }
 
+#include <stdio.h>
+#include <string.h>
+
+void getMotherboard(char *buffer, size_t size) {
+    snprintf(buffer, size, "Unknown");
+
+    FILE *fp = fopen("/sys/class/dmi/id/board_name", "r");
+    if (fp) {
+        if (fgets(buffer, size, fp)) {
+            buffer[strcspn(buffer, "\r\n")] = '\0';
+        }
+        fclose(fp);
+    }
+}
+
 void getCpu(char *buffer, size_t size) {
     FILE *fp = fopen("/proc/cpuinfo", "r");
     if(fp == NULL) {
@@ -254,5 +269,42 @@ void getDisk(char *buffer, size_t size) {
     }
 }
 
-// next: void getSwap()
+#include <stdio.h>
+#include <string.h>
+
+void getSwap(char *buffer, size_t size) {
+    FILE *fp = fopen("/proc/meminfo", "r");
+    if (fp == NULL) {
+        snprintf(buffer, size, "Unknown");
+        return;
+    }
+
+    unsigned long total_kb = 0;
+    unsigned long free_kb = 0;
+    int found_total = 0, found_free = 0;
+    char line[256];
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        if (sscanf(line, "SwapTotal: %lu kB", &total_kb) == 1) {
+            found_total = 1;
+        } else if (sscanf(line, "SwapFree: %lu kB", &free_kb) == 1) {
+            found_free = 1;
+        }
+
+        if (found_total && found_free) break;
+    }
+    fclose(fp);
+
+    if (!found_total || total_kb == 0) {
+        snprintf(buffer, size, "None");
+        return;
+    }
+
+    unsigned long used_kb = (total_kb > free_kb) ? (total_kb - free_kb) : 0;
+
+    unsigned long used_mib = used_kb / 1024;
+    unsigned long total_mib = total_kb / 1024;
+
+    snprintf(buffer, size, "%luMiB / %luMiB", used_mib, total_mib);
+}
 // next: void getIp()
