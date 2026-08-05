@@ -7,6 +7,7 @@
 #include <sys/utsname.h>
 #include <sys/sysinfo.h>
 #include <sys/statvfs.h>
+#include <dirent.h>
 
 void printHeader() {
     char hostname[HOST_NAME_MAX + 1];
@@ -62,50 +63,92 @@ void getKernel(char *buffer, size_t size) {
 }
 
 void getPackages(char *buffer, size_t size) {
-    char line[256];
-    if(access("/usr/bin/pacman", X_OK) == 0) {
-        FILE *fp = popen("pacman -Qq | wc -l", "r");
-        if(fp != NULL) {
-            fgets(line, sizeof(line), fp);
-            line[strcspn(line, "\n")] = '\0';
-            pclose(fp);
-            snprintf(buffer, size, "%s (pacman)", line);
+    DIR *dir = opendir("/var/lib/pacman/local");
+    if(dir != NULL) {
+        struct dirent *entry;
+        int count = 0;
+
+        while((entry = readdir(dir)) != NULL) {
+            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+                continue;
+            }
+            if(entry->d_type == DT_DIR) {
+                count++;
+            }
         }
-    } else if(access("/usr/bin/dpkg-query", X_OK) == 0) {
-        FILE *fp = popen("dpkg-query -f '${binary:Package}\n' -W | wc -l", "r");
-        if (fp != NULL) {
-            fgets(line, sizeof(line), fp);
-            line[strcspn(line, "\n")] = '\0';
-            pclose(fp);
-            snprintf(buffer, size, "%s (dpkg)", line);
-        }
-    } else if(access("/usr/bin/rpm", X_OK) == 0) {
-        FILE *fp = popen("rpm -qa | wc -l", "r");
-        if(fp != NULL) {
-            fgets(line, sizeof(line), fp);
-            line[strcspn(line, "\n")] = '\0';
-            pclose(fp);
-            snprintf(buffer, size, "%s (rpm)", line);
-        }
-    } else if(access("/sbin/apk", X_OK) == 0) {
-        FILE *fp = popen("apk info | wc -l", "r");
-        if (fp != NULL) {
-            fgets(line, sizeof(line), fp);
-            line[strcspn(line, "\n")] = '\0';
-            pclose(fp);
-            snprintf(buffer, size, "%s (apk)", line);
-        }
-    } else if(access("/usr/bin/qlist", X_OK) == 0) {
-        FILE *fp = popen("qlist -I | wc -l", "r");
-        if (fp != NULL) {
-            fgets(line, sizeof(line), fp);
-            line[strcspn(line, "\n")] = '\0';
-            pclose(fp);
-            snprintf(buffer, size, "%s (portage)", line);
-        }
-    } else {
-        snprintf(buffer, size, "Unknown");
+
+        closedir(dir);
+        snprintf(buffer, size, "%d (pacman)", count);
+        return;
     }
+
+    FILE *fp = fopen("/var/lib/dpkg/status", "r");
+    if(fp != NULL) {
+        int count = 0;
+        char line[256];
+
+        while(fgets(line, sizeof(line), fp) != NULL) {
+            if(strncmp(line, "Status: install ok installed", 27) == 0) {
+                count++;
+            }
+        }
+
+        fclose(fp);
+        snprintf(buffer, size, "%d (dpkg)", count);
+        return;
+    }
+
+    fp = fopen("/var/lib/apk/installed", "r");
+    if(fp != NULL) {
+        int count = 0;
+        char line[256];
+
+        while(fgets(line, sizeof(line), fp) != NULL) {
+            if(strncmp(line, "P:", 2) == 0) {
+                count++;
+            }
+        }
+
+        fclose(fp);
+        snprintf(buffer, size, "%d (apk)", count);
+        return;
+    }
+
+    dir = opendir("/var/db/pkg");
+    if(dir != NULL) {
+        struct dirent *entry;
+        int count = 0;
+        char cat_path[512];
+
+        while((entry = readdir(dir)) != NULL) {
+            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+                continue;
+            }
+
+            if(entry->d_type == DT_DIR) {
+                snprintf(cat_path, sizeof(cat_path), "/var/db/pkg/%s", entry->d_name);
+
+                DIR *sub_dir = opendir(cat_path);
+                if(sub_dir != NULL) {
+                    struct dirent *sub_entry;
+
+                    while((sub_entry = readdir(sub_dir)) != NULL) {
+                        if(strcmp(sub_entry->d_name, ".") == 0 || strcmp(sub_entry->d_name, "..") == 0) {
+                            continue;
+                        }
+                        if(sub_entry->d_type == DT_DIR) {
+                            count++;
+                        }
+                    }
+                    closedir(sub_dir);
+                }
+            }
+        }
+        closedir(dir);
+        snprintf(buffer, size, "%d (portage)", count);
+        return;
+    }
+    snprintf(buffer, size, "Unknown");
 }
 
 void getUptime(char *buffer, size_t size) {
