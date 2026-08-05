@@ -58,8 +58,6 @@ int main(void) {
     getSwap(buffer, sizeof(buffer));
     printInfo("Swap", "%s", buffer);
 
-    // next: getIp()
-
 #else
     printf("This program has only Linux support.\n");
 #endif
