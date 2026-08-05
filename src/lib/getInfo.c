@@ -163,9 +163,6 @@ void getDe_wm(char *buffer, size_t size) {
     }
 }
 
-#include <stdio.h>
-#include <string.h>
-
 void getMotherboard(char *buffer, size_t size) {
     snprintf(buffer, size, "Unknown");
 
