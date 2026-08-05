@@ -269,9 +269,6 @@ void getDisk(char *buffer, size_t size) {
     }
 }
 
-#include <stdio.h>
-#include <string.h>
-
 void getSwap(char *buffer, size_t size) {
     FILE *fp = fopen("/proc/meminfo", "r");
     if (fp == NULL) {
@@ -307,4 +304,3 @@ void getSwap(char *buffer, size_t size) {
 
     snprintf(buffer, size, "%luMiB / %luMiB", used_mib, total_mib);
 }
-// next: void getIp()
