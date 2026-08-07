@@ -1,59 +1,59 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const getInfo = @import("lib/getInfo.zig");
 const c = @cImport({
     @cInclude("stdio.h");
     @cInclude("lib/getInfo.h");
 });
 
-pub fn printInfo(label: []const u8, value: [*:0]const u8) void {
-    _ = c.printf("\x1b[1;36m%s:\x1b[0m %s\n", label.ptr, value);
+pub fn printInfo(label: []const u8, value: []const u8) void {
+    std.debug.print("\x1b[1;36m{s}:\x1b[0m {s}\n", .{ label, value });
 }
 
 pub fn main() void {
     if (builtin.os.tag == .linux) {
-        c.printHeader();
+        getInfo.printHeader();
 
         var buffer: [256]u8 = undefined;
-        const buf_ptr: [*:0]const u8 = @ptrCast(&buffer);
 
         c.getLinux_distro(&buffer, buffer.len);
-        printInfo("OS", buf_ptr);
+        printInfo("OS", std.mem.sliceTo(&buffer, 0));
 
         c.getKernel(&buffer, buffer.len);
-        printInfo("Kernel", buf_ptr);
+        printInfo("Kernel", std.mem.sliceTo(&buffer, 0));
 
         c.getPackages(&buffer, buffer.len);
-        printInfo("Packages", buf_ptr);
+        printInfo("Packages", std.mem.sliceTo(&buffer, 0));
 
         c.getUptime(&buffer, buffer.len);
-        printInfo("Uptime", buf_ptr);
+        printInfo("Uptime", std.mem.sliceTo(&buffer, 0));
 
         c.getShell(&buffer, buffer.len);
-        printInfo("Shell", buf_ptr);
+        printInfo("Shell", std.mem.sliceTo(&buffer, 0));
 
         c.getTerm(&buffer, buffer.len);
-        printInfo("Terminal", buf_ptr);
+        printInfo("Terminal", std.mem.sliceTo(&buffer, 0));
 
         c.getDe_wm(&buffer, buffer.len);
-        printInfo("DE/WM", buf_ptr);
+        printInfo("DE/WM", std.mem.sliceTo(&buffer, 0));
 
         c.getCpu(&buffer, buffer.len);
-        printInfo("CPU", buf_ptr);
+        printInfo("CPU", std.mem.sliceTo(&buffer, 0));
 
         c.getGpu(&buffer, buffer.len);
-        printInfo("GPU", buf_ptr);
+        printInfo("GPU", std.mem.sliceTo(&buffer, 0));
 
         c.getMotherboard(&buffer, buffer.len);
-        printInfo("Motherboard", buf_ptr);
+        printInfo("Motherboard", std.mem.sliceTo(&buffer, 0));
 
         c.getRam(&buffer, buffer.len);
-        printInfo("RAM", buf_ptr);
+        printInfo("RAM", std.mem.sliceTo(&buffer, 0));
 
         c.getDisk(&buffer, buffer.len);
-        printInfo("Disk (/)", buf_ptr);
+        printInfo("Disk (/)", std.mem.sliceTo(&buffer, 0));
 
         c.getSwap(&buffer, buffer.len);
-        printInfo("Swap", buf_ptr);
+        printInfo("Swap", std.mem.sliceTo(&buffer, 0));
     } else {
         std.debug.print("This program has only Linux support.\n", .{});
     }
