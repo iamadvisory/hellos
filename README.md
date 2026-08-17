@@ -16,6 +16,6 @@ sudo make install
 hellos
 ```
 
-![hellos previwe](screens/image_v0.7.png)
+![hellos previwe](screens/image_v0.8.png)
 
 # NOT AI PROJECT
