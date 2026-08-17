@@ -245,27 +245,107 @@ void getCpu(char *buffer, size_t size) {
     fclose(fp);
 }
 
-void getGpu(char *buffer, size_t size) {
-    char line[256];
-    FILE *fp = popen("lspci | grep -E 'VGA|3D|Display'", "r");
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <strings.h>
 
+void getGpu(char *buffer, size_t size) {
     snprintf(buffer, size, "Unknown");
 
-    if(fp != NULL && fgets(line, sizeof(line), fp) != NULL) {
-        char *first_colon = strchr(line, ':');
-        if(first_colon) {
-            char *second_colon = strchr(first_colon + 1, ':');
-            if(second_colon) {
-                char *start = second_colon + 1;
-                while (*start == ' ' || *start == '\t') start++;
-                char *end = strchr(start, '\n');
+    DIR *dir = opendir("/sys/bus/pci/devices");
+    if (!dir) return;
+
+    struct dirent *entry;
+    unsigned int v_id = 0, d_id = 0;
+    int found = 0;
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_name[0] == '.') continue;
+
+        char path[512];
+        snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/class", entry->d_name);
+        FILE *f_class = fopen(path, "r");
+        if (!f_class) continue;
+
+        unsigned int class_code = 0;
+        fscanf(f_class, "0x%x", &class_code);
+        fclose(f_class);
+
+        if ((class_code >> 16) == 0x03) {
+            snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/vendor", entry->d_name);
+            FILE *f_v = fopen(path, "r");
+            snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/device", entry->d_name);
+            FILE *f_d = fopen(path, "r");
+
+            if (f_v && f_d) {
+                if (fscanf(f_v, "0x%x", &v_id) == 1 && fscanf(f_d, "0x%x", &d_id) == 1) {
+                    found = 1;
+                }
+            }
+            if (f_v) fclose(f_v);
+            if (f_d) fclose(f_d);
+
+            if (found) break;
+        }
+    }
+    closedir(dir);
+
+    if (!found) return;
+
+    FILE *f_ids = fopen("/usr/share/hwdata/pci.ids", "r");
+    if (!f_ids) {
+        f_ids = fopen("/usr/share/misc/pci.ids", "r");
+    }
+
+    if (!f_ids) {
+        snprintf(buffer, size, "PCI ID %04x:%04x", v_id, d_id);
+        return;
+    }
+
+    char target_v[5], target_d[5];
+    snprintf(target_v, sizeof(target_v), "%04x", v_id);
+    snprintf(target_d, sizeof(target_d), "%04x", d_id);
+
+    char line[512];
+    char vendor_name[128] = "";
+    char device_name[128] = "";
+    int in_target_vendor = 0;
+
+    while (fgets(line, sizeof(line), f_ids)) {
+        if (line[0] == '#' || line[0] == '\n' || line[0] == '\r') continue;
+
+        if (line[0] != '\t') {
+            if (in_target_vendor) break;
+
+            if (strncasecmp(line, target_v, 4) == 0 && (line[4] == ' ' || line[4] == '\t')) {
+                in_target_vendor = 1;
+                char *name = line + 4;
+                while (*name == ' ' || *name == '\t') name++;
+                char *end = strpbrk(name, "\r\n");
                 if (end) *end = '\0';
-                snprintf(buffer, size, "%s", start);
+                strncpy(vendor_name, name, sizeof(vendor_name) - 1);
+            }
+        } else if (in_target_vendor && line[0] == '\t' && line[1] != '\t') {
+            if (strncasecmp(line + 1, target_d, 4) == 0 && (line[5] == ' ' || line[5] == '\t')) {
+                char *name = line + 5;
+                while (*name == ' ' || *name == '\t') name++;
+                char *end = strpbrk(name, "\r\n");
+                if (end) *end = '\0';
+                strncpy(device_name, name, sizeof(device_name) - 1);
+                break;
             }
         }
     }
-    if(fp != NULL) {
-        pclose(fp);
+    fclose(f_ids);
+
+    if (in_target_vendor && device_name[0] != '\0') {
+        snprintf(buffer, size, "%s %s", vendor_name, device_name);
+    } else if (in_target_vendor) {
+        snprintf(buffer, size, "%s [%04x]", vendor_name, d_id);
+    } else {
+        snprintf(buffer, size, "PCI ID %04x:%04x", v_id, d_id);
     }
 }
 
