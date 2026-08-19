@@ -13,11 +13,11 @@ void printHeader() {
     char hostname[HOST_NAME_MAX + 1];
     char *username = getenv("USER");
 
-    if(username == NULL) {
+    if (username == NULL) {
         username = "user";
     }
 
-    if(gethostname(hostname, sizeof(hostname)) == 0) {
+    if (gethostname(hostname, sizeof(hostname)) == 0) {
         hostname[HOST_NAME_MAX] = '\0';
         printf("\033[1;32m%s\033[0m@\033[1;36m%s\033[0m\n", username, hostname);
         size_t len = strlen(username) + 1 + strlen(hostname);
@@ -30,7 +30,7 @@ void printHeader() {
 
 void getLinux_distro(char *buffer, size_t size) {
     FILE *fp = fopen("/etc/os-release", "r");
-    if(fp == NULL) {
+    if (fp == NULL) {
         snprintf(buffer, size, "Unknown");
         return;
     }
@@ -39,8 +39,8 @@ void getLinux_distro(char *buffer, size_t size) {
 
     char line[256];
 
-    while(fgets(line, sizeof(line), fp)) {
-        if(strncmp(line, "NAME=", 5) == 0) {
+    while (fgets(line, sizeof(line), fp)) {
+        if (strncmp(line, "NAME=", 5) == 0) {
             char *start = line + 5;
             if(*start == '"') start++;
             char *end = strpbrk(start, "\"\n");
@@ -55,24 +55,24 @@ void getLinux_distro(char *buffer, size_t size) {
 void getKernel(char *buffer, size_t size) {
     struct utsname buf;
 
-    if(uname(&buf) == 0) {
+    if (uname(&buf) == 0) {
         snprintf(buffer, size, "%s %s", buf.sysname, buf.release);
     } else {
         snprintf(buffer, size, "Unknown");
     }
 }
 
-void getPackages(char *buffer, size_t size) {
+void getPackages (char *buffer, size_t size) {
     DIR *dir = opendir("/var/lib/pacman/local");
-    if(dir != NULL) {
+    if (dir != NULL) {
         struct dirent *entry;
         int count = 0;
 
-        while((entry = readdir(dir)) != NULL) {
-            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+        while ((entry = readdir(dir)) != NULL) {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
                 continue;
             }
-            if(entry->d_type == DT_DIR) {
+            if (entry->d_type == DT_DIR) {
                 count++;
             }
         }
@@ -83,12 +83,12 @@ void getPackages(char *buffer, size_t size) {
     }
 
     FILE *fp = fopen("/var/lib/dpkg/status", "r");
-    if(fp != NULL) {
+    if (fp != NULL) {
         int count = 0;
         char line[256];
 
-        while(fgets(line, sizeof(line), fp) != NULL) {
-            if(strncmp(line, "Status: install ok installed", 27) == 0) {
+        while (fgets(line, sizeof(line), fp) != NULL) {
+            if (strncmp(line, "Status: install ok installed", 27) == 0) {
                 count++;
             }
         }
@@ -99,11 +99,11 @@ void getPackages(char *buffer, size_t size) {
     }
 
     fp = fopen("/var/lib/apk/installed", "r");
-    if(fp != NULL) {
+    if (fp != NULL) {
         int count = 0;
         char line[256];
 
-        while(fgets(line, sizeof(line), fp) != NULL) {
+        while (fgets(line, sizeof(line), fp) != NULL) {
             if(strncmp(line, "P:", 2) == 0) {
                 count++;
             }
@@ -115,28 +115,28 @@ void getPackages(char *buffer, size_t size) {
     }
 
     dir = opendir("/var/db/pkg");
-    if(dir != NULL) {
+    if (dir != NULL) {
         struct dirent *entry;
         int count = 0;
         char cat_path[512];
 
-        while((entry = readdir(dir)) != NULL) {
-            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+        while ((entry = readdir(dir)) != NULL) {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
                 continue;
             }
 
-            if(entry->d_type == DT_DIR) {
+            if (entry->d_type == DT_DIR) {
                 snprintf(cat_path, sizeof(cat_path), "/var/db/pkg/%s", entry->d_name);
 
                 DIR *sub_dir = opendir(cat_path);
-                if(sub_dir != NULL) {
+                if (sub_dir != NULL) {
                     struct dirent *sub_entry;
 
-                    while((sub_entry = readdir(sub_dir)) != NULL) {
-                        if(strcmp(sub_entry->d_name, ".") == 0 || strcmp(sub_entry->d_name, "..") == 0) {
+                    while ((sub_entry = readdir(sub_dir)) != NULL) {
+                        if (strcmp(sub_entry->d_name, ".") == 0 || strcmp(sub_entry->d_name, "..") == 0) {
                             continue;
                         }
-                        if(sub_entry->d_type == DT_DIR) {
+                        if (sub_entry->d_type == DT_DIR) {
                             count++;
                         }
                     }
@@ -154,7 +154,7 @@ void getPackages(char *buffer, size_t size) {
 void getUptime(char *buffer, size_t size) {
     struct sysinfo info;
 
-    if(sysinfo(&info) == 0) {
+    if (sysinfo(&info) == 0) {
         snprintf(buffer, size, "%ld hours %ld minutes", info.uptime / 3600, (info.uptime % 3600) / 60);
     } else {
         snprintf(buffer, size, "Unknown");
@@ -164,13 +164,13 @@ void getUptime(char *buffer, size_t size) {
 void getShell(char *buffer, size_t size) {
     char *shell_path = getenv("SHELL");
 
-    if(shell_path == NULL) {
+    if (shell_path == NULL) {
         snprintf(buffer, size, "Unknown");
         return;
     }
 
     char *shell_name = strrchr(shell_path, '/');
-    if(shell_name != NULL) {
+    if (shell_name != NULL) {
         snprintf(buffer, size, "%s", shell_name + 1);
     } else {
         snprintf(buffer, size, "%s", shell_path);
@@ -181,9 +181,9 @@ void getTerm(char *buffer, size_t size) {
     char *term_p_name = getenv("TERM_PROGRAM");
     char *term_name = getenv("TERM");
 
-    if(term_p_name != NULL) {
+    if (term_p_name != NULL) {
         snprintf(buffer, size, "%s", term_p_name);
-    } else if(term_name != NULL) {
+    } else if (term_name != NULL) {
         snprintf(buffer, size, "%s", term_name);
     } else {
         snprintf(buffer, size, "Unknown");
@@ -195,11 +195,11 @@ void getDe_wm(char *buffer, size_t size) {
     char *xsd = getenv("XDG_SESSION_DESKTOP");
     char *ds = getenv("DESKTOP_SESSION");
 
-    if(xcd != NULL) {
+    if (xcd != NULL) {
         snprintf(buffer, size, "%s", xcd);
-    } else if(xsd != NULL) {
+    } else if (xsd != NULL) {
         snprintf(buffer, size, "%s", xsd);
-    } else if(ds != NULL) {
+    } else if (ds != NULL) {
         snprintf(buffer, size, "%s", ds);
     } else {
         snprintf(buffer, size, "Unknown");
@@ -220,7 +220,7 @@ void getMotherboard(char *buffer, size_t size) {
 
 void getCpu(char *buffer, size_t size) {
     FILE *fp = fopen("/proc/cpuinfo", "r");
-    if(fp == NULL) {
+    if (fp == NULL) {
         snprintf(buffer, size, "Unknown");
         return;
     }
@@ -229,10 +229,10 @@ void getCpu(char *buffer, size_t size) {
 
     char line[256];
 
-    while(fgets(line, sizeof(line), fp)) {
-        if(strncmp(line, "model name", 10) == 0) {
+    while (fgets(line, sizeof(line), fp)) {
+        if (strncmp(line, "model name", 10) == 0) {
             char *colon = strchr(line, ':');
-            if(colon) {
+            if (colon) {
                 char *start = colon + 1;
                 while (*start == ' ' || *start == '\t') start++;
                 char *end = strchr(start, '\n');
