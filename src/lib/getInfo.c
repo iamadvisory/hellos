@@ -376,8 +376,18 @@ void getRam(char *buffer, size_t size) {
 void getDisk(char *buffer, size_t size) {
     struct statvfs buf;
 
-    if(statvfs("/", &buf) == 0) {
-        snprintf(buffer, size, "%luGiB / %luGiB", ((buf.f_blocks - buf.f_bavail) * buf.f_frsize / (1024 * 1024 * 1024)), ((buf.f_blocks * buf.f_frsize) / (1024 * 1024 * 1024)));
+    if (statvfs("/", &buf) == 0) {
+        unsigned long long used =
+            (unsigned long long)(buf.f_blocks - buf.f_bavail) *
+            (unsigned long long)buf.f_frsize /
+            (1024ULL * 1024ULL * 1024ULL);
+
+        unsigned long long total =
+            (unsigned long long)buf.f_blocks *
+            (unsigned long long)buf.f_frsize /
+            (1024ULL * 1024ULL * 1024ULL);
+
+        snprintf(buffer, size, "%lluGiB / %lluGiB", used, total);
     } else {
         snprintf(buffer, size, "Unknown");
     }
